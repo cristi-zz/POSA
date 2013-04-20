@@ -98,6 +98,11 @@ public class Pa3_test {
     
     
     /**
+     * Main method. First parameter is the port (default 1000) and the second 
+     * the server's chunk dimension (default 1000)
+     * 
+     * To run, use: java -jar pa3_test.jar port_no chunk_size
+     * 
      * @param args the command line arguments
      */
     public static void main(String[] args) {
@@ -115,7 +120,7 @@ public class Pa3_test {
         System.out.println("If errors, read the messages.");
         
         
-       //Fill in some jobs
+       //Fill in some jobs Feel free to add/remove/create your own sadistic jobs!
         Pipe[] jobs={
                 chokeTheServer(port,100000,5000),
                 smallChunkTest(port, serverChunkSize, 1000),
