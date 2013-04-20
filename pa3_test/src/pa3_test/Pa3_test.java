@@ -12,68 +12,129 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jobpipes.Pipe;
 import jobpipes.ServerTestPipe;
+import pa3_test.verifiers.VerifyCorrectEchoedData;
 import pa3_test.verifiers.VerifyInfo;
 
 /**
- *
+ * 
  * @author visoft
  */
 public class Pa3_test {
 
     /**
+     * This test will write some data and observe the "chunk at a time" behavior
+     * @param port
+     * @param ChunkSize
+     * @return 
+     */
+    private static Pipe smallChunkTest(int port,int ChunkSize, int timeout){
+        int size=2*ChunkSize+1;
+        byte[] outData=DataGenerator.generateRandomCharBuff(size);
+        
+        ServerTestPipe pipe;
+        pipe=new ServerTestPipe("Simple test suite", port, outData, size, timeout, null);
+        
+        pipe.addJob(new ReadWriteJob(0, ChunkSize-1));
+        pipe.addJob(new VerifyInfo());        
+        pipe.addJob(new VerifyExactReadValue(0));
+        pipe.addJob(new VerifyBlockMultiplicity(ChunkSize));
+        pipe.addJob(new VerifyCorrectEchoedData());
+        pipe.addJob(new ReadWriteJob(ChunkSize-1, 1));
+        pipe.addJob(new VerifyInfo());        
+        pipe.addJob(new VerifyBlockMultiplicity(ChunkSize));
+        pipe.addJob(new VerifyExactReadValue(ChunkSize));
+        pipe.addJob(new VerifyCorrectEchoedData());
+        pipe.addJob(new ReadWriteJob(ChunkSize, ChunkSize+1));
+        pipe.addJob(new VerifyInfo());        
+        pipe.addJob(new VerifyExactReadValue(2*ChunkSize));
+        pipe.addJob(new VerifyBlockMultiplicity(ChunkSize));
+        pipe.addJob(new VerifyCorrectEchoedData());
+
+        return pipe;
+    }
+    /**
+     * Some large buffer is sent,received and verified
+     * @param port
+     * @param size
+     * @param timeout
+     * @return 
+     */
+    private static Pipe largeBufferTransfer(int port,int size,int timeout){
+        byte[] outData=DataGenerator.generateRandomCharBuff(size);
+        
+        ServerTestPipe pipe;
+        pipe=new ServerTestPipe("Send and receive a loong buffer", port, outData, size, timeout, null);
+        
+        pipe.addJob(new ReadWriteJob(0, size));
+        pipe.addJob(new VerifyInfo());  
+        pipe.addJob(new VerifyCorrectEchoedData());
+        
+        return pipe;
+    }
+    /**
+     * Flood the server with writes, and never read anything.
+     * The communication will block at both ends when the OS/network buffers will be full.
+     * HOWEVER, the communication will have to block only on THIS socket only and leave the rest
+     * of the sockets unaffected!
+     * 
+     * @param port
+     * @param size
+     * @param timeout
+     * @return 
+     */
+    private static Pipe chokeTheServer(int port,int size, int timeout){
+        byte[] outData=DataGenerator.generateRandomCharBuff(size);
+        
+        ServerTestPipe pipe;
+        pipe=new ServerTestPipe("Choke the server. The total written bytes should be lower than the actual buffer ("+size+" bytes)", port, outData, 0, timeout, null);
+        pipe.addJob(new ReadWriteJob(0, size));
+        pipe.addJob(new VerifyInfo());  
+        
+        
+        return pipe;
+    }
+    
+    
+    /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
         int port=1000;
+        int serverChunkSize=1000;
         if(args.length>=1)
             try{port=Integer.parseInt(args[0]);}catch(Exception e){};
+
+        if(args.length>=2)
+            try{serverChunkSize=Integer.parseInt(args[1]);}catch(Exception e){};
+            
+            
         System.out.println("Start testing server on port "+port);
+        System.out.println("Expected server chunk size: "+serverChunkSize+". Some tests will incorrectly fail if this value is wrong");
+        System.out.println("If errors, read the messages.");
         
         
-        byte[] outData=DataGenerator.generateRandomCharBuff(21);
+       //Fill in some jobs
+        Pipe[] jobs={
+                chokeTheServer(port,100000,5000),
+                smallChunkTest(port, serverChunkSize, 1000),
+                largeBufferTransfer(port, 1000000, 15000),
+                smallChunkTest(port, serverChunkSize, 1000),
+                largeBufferTransfer(port, 1000000, 15000)
+        };
         
-        ServerTestPipe pipe;
-        pipe=new ServerTestPipe("Simple test suite", port, outData, 1000, 1000, null);
+        System.out.println("\nStarting jobs...\n");
         
-        pipe.addJob(new ReadWriteJob(0, 9));
-        pipe.addJob(new VerifyInfo());        
-        pipe.addJob(new VerifyExactReadValue(0));
-        pipe.addJob(new VerifyBlockMultiplicity(10));
-        pipe.addJob(new ReadWriteJob(9, 1));
-        pipe.addJob(new VerifyInfo());        
-        pipe.addJob(new VerifyBlockMultiplicity(10));
-        pipe.addJob(new VerifyExactReadValue(10));
-        pipe.addJob(new ReadWriteJob(10, 11));
-        pipe.addJob(new VerifyInfo());        
-        pipe.addJob(new VerifyExactReadValue(20));
-        pipe.addJob(new VerifyBlockMultiplicity(10));
+        for(Pipe p:jobs)
+            p.startPipe();
         
-        
-        ServerTestPipe flood;
-        flood=new ServerTestPipe("Flood and block the read buffers", port, DataGenerator.generateRandomCharBuff(1000000), 0, 5000, null);
-        flood.addJob(new ReadWriteJob(0, 1000000));
-        flood.addJob(new VerifyInfo());
-        
-        ServerTestPipe longprocess =new ServerTestPipe("Some long buffer", port, DataGenerator.generateRandomCharBuff(1000000), 1000000, 25000, null);
-        longprocess.addJob(new ReadWriteJob(0, 1000000));
-        longprocess.addJob(new VerifyBlockMultiplicity(10));
-        longprocess.addJob(new VerifyInfo());
-        
-        flood.startPipe();
-        longprocess.startPipe();
-        pipe.startPipe();
-        
-        
-        
-        pipe.waitForFinish();
-        flood.waitForFinish();
-        longprocess.waitForFinish();
-        
-        System.out.println(pipe.getResults());
-        System.out.println(flood.getResults());
-        System.out.println(longprocess.getResults());
-        
+        for(Pipe p:jobs){
+            p.waitForFinish();
+            System.out.println(p.getResults());
+        }
+
+        System.out.println("\nDone.");
      
     }
 }

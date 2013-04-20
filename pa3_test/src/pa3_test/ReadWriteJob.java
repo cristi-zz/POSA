@@ -4,6 +4,7 @@
  */
 package pa3_test;
 
+import java.io.StringWriter;
 import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,6 +25,7 @@ public class ReadWriteJob implements AsyncJob{
     
     @Override
     public void StartTheJob() {
+        out.append("Starting read/write from position "+start+" to "+(start+length)+" size: "+length+"\n");
         RWThread.Execute(start, length);
     }
 
@@ -46,8 +48,10 @@ public class ReadWriteJob implements AsyncJob{
     @Override
     public void Register(Pipe pipe) {
         RWThread=pipe.getReadWriteThread();
+        out=pipe.getOutputStream();
     }
     
     private ThreadedReadWrite RWThread;
     private int start, length, timeToWait;
+    private StringWriter out;
 }
