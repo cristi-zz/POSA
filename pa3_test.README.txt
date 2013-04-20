@@ -1,0 +1,16 @@
+Program assignment #3.
+
+For now, it evaluates only "chunk at a time" servers. 
+
+Feel free to look into the source code for details
+
+Usage:
+1)Start your server
+2)Write into a console
+java -jar pa3_test.jar port_no chunk_size
+	where port_no and chunk_size must be identical with the server's settings.
+	Ex:
+	java -jar pa3_test.jar 1000 20
+3)Examine the output
+
+

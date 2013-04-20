@@ -1,6 +1,8 @@
 *.class
 
 # Package Files #
-*.jar
 *.war
 *.ear
+/pa3_test/nbproject/private/
+/pa3_test/build/
+/pa3_test/dist/
