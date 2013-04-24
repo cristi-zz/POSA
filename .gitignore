@@ -4,5 +4,8 @@
 *.war
 *.ear
 /pa3_test/nbproject/private/
+/pa3_test/nbproject/
 /pa3_test/build/
 /pa3_test/dist/
+/pa3_test/build.xml
+/pa3_test/manifest.mf

@@ -1,16 +1,60 @@
-Program assignment #3.
+Program assignment #3 and #4 test client.
 
-For now, it evaluates only "chunk at a time" servers. 
+This client connects to a port and evaluates "chunk at a time", "line at a time" and "line with ThreadID in the beginning of the echoed line" type of servers. 
 
-Feel free to look into the source code for details
+Feel free to look into the source code for details!
 
 Usage:
 1)Start your server
-2)Write into a console
+2)Write into a console:
+
 java -jar pa3_test.jar port_no chunk_size
+
 	where port_no and chunk_size must be identical with the server's settings.
 	Ex:
 	java -jar pa3_test.jar 1000 20
+
 3)Examine the output
 
+**Features:
 
+*Tests servers from PA#3 (both types) and PA#4
+*Returned data is checked against the sent data
+*Thread ID's (PA#4) are collected automatically, if present
+*No strict check for newline behavior. The \r and \n are threated separately. There is no \r\n concept.
+*No language specific server. The porgram needs the port where to connect.
+*Can display connection statistics (no of sent/received bytes)
+*All the test jobs are run in parrale, thus stressing the server.
+*Timeouts of 15 seconds per test (need to change source code in order to change them)
+*Comprehensible (I hope!) test outputs
+*Fully customizable and easy to built tests, using predefined building blocks. (Need to know your way around Java)
+
+
+**Types of test:
+
+*Test the chunk at a time server:
+	You must supply the chunk dimension for the server. The tests and the evaluation expect this value to be correct. If not, the server might wronfully fail the tests.
+	There is one short test, the following verifications are done:
+	after chunk-1 bytes are sent (expect no outpu)
+	after another byte is sent (expect a chunk)
+	after another chunk+1 (expect 2*chunk overall reply)
+
+*Test the chunk at a time using a large buffer
+	Must supply the chunk size
+	Sends a large buffer, records and verifies the output
+
+*Test the newline behavior using a small sample 	
+	Sends a small set of bytes, without newlines (expects no output)
+	Sends a newline (expects the echo)
+	Sends the rest of the data and several more newlines (expects correct behavior)
+	
+*Test the newline behavior using large sample
+	Randomly generated chars, with some newlines inserted at random
+	Verify that the echoed data is correct
+	Collects and displays the received ThreadID's
+
+*Floods the server with a large chunk of data.
+	There is one connection that writes to the server but never reads anything. If the server is written wrong (i.e. blocks, and it doesn't use reactor) then all the tests (hopefully) will have troubles.
+
+**Remarks
+Newline tests were tested "offline" and not with a real server (not started yet the PA#4). If you test PA#3 with "newline at a time" behavior plese send feedback! 
