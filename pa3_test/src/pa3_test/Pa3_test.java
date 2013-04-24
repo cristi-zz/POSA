@@ -4,8 +4,8 @@
  */
 package pa3_test;
 
-import pa3_test.verifiers.VerifyExactReadValue;
-import pa3_test.verifiers.VerifyBlockMultiplicity;
+import verifiers.VerifyExactReadValue;
+import verifiers.VerifyBlockMultiplicity;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -14,8 +14,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import jobpipes.Pipe;
 import jobpipes.ServerTestPipe;
-import pa3_test.verifiers.VerifyCorrectEchoedData;
-import pa3_test.verifiers.VerifyInfo;
+import verifiers.VerifyCorrectEchoedNewline;
+import verifiers.VerifyCorrectEchoedSimple;
+import verifiers.VerifyInfo;
+import verifiers.VerifyNewlineMultiplicity;
 
 /**
  * 
@@ -40,17 +42,17 @@ public class Pa3_test {
         pipe.addJob(new VerifyInfo());        
         pipe.addJob(new VerifyExactReadValue(0));
         pipe.addJob(new VerifyBlockMultiplicity(ChunkSize));
-        pipe.addJob(new VerifyCorrectEchoedData());
+        pipe.addJob(new VerifyCorrectEchoedSimple());
         pipe.addJob(new ReadWriteJob(ChunkSize-1, 1));
         pipe.addJob(new VerifyInfo());        
         pipe.addJob(new VerifyBlockMultiplicity(ChunkSize));
         pipe.addJob(new VerifyExactReadValue(ChunkSize));
-        pipe.addJob(new VerifyCorrectEchoedData());
+        pipe.addJob(new VerifyCorrectEchoedSimple());
         pipe.addJob(new ReadWriteJob(ChunkSize, ChunkSize+1));
         pipe.addJob(new VerifyInfo());        
         pipe.addJob(new VerifyExactReadValue(2*ChunkSize));
         pipe.addJob(new VerifyBlockMultiplicity(ChunkSize));
-        pipe.addJob(new VerifyCorrectEchoedData());
+        pipe.addJob(new VerifyCorrectEchoedSimple());
 
         return pipe;
     }
@@ -69,7 +71,7 @@ public class Pa3_test {
         
         pipe.addJob(new ReadWriteJob(0, size));
         pipe.addJob(new VerifyInfo());  
-        pipe.addJob(new VerifyCorrectEchoedData());
+        pipe.addJob(new VerifyCorrectEchoedSimple());
         
         return pipe;
     }
@@ -96,6 +98,51 @@ public class Pa3_test {
         return pipe;
     }
     
+    /**
+     * 
+     * Sends a looong chunk and see if the chunks between newlines are echoed back correctly.
+     * Also collects the thread ID's if any.
+     * 
+     * @param port
+     * @param size
+     * @param timeout
+     * @return 
+     */
+    private static Pipe LongBufferNewLineServer(int port, int size, int timeout){
+        byte[] outData=DataGenerator.generateRandomCharBuffWithNewLine(size, 200);
+        
+        ServerTestPipe pipe;
+        pipe=new ServerTestPipe("Send and receive a loong buffer. Evaluate the newline behavior", port, outData, size, timeout, null);
+        
+        pipe.addJob(new ReadWriteJob(0, size));
+        pipe.addJob(new VerifyInfo());  
+        pipe.addJob(new VerifyNewlineMultiplicity());
+        pipe.addJob(new VerifyCorrectEchoedNewline());
+
+        return pipe;
+        
+    }
+    
+    
+    private static Pipe ShortBufferNewlineBehavior(int port, int timeout){
+        String s1="AAA\n\rBBB\nCCC\nDDD";
+       
+        
+        ServerTestPipe pipe;
+        pipe=new ServerTestPipe("Send and receive a loong buffer. Evaluate the newline behavior", port, s1.getBytes(),500 , timeout, null);
+        pipe.addJob(new ReadWriteJob(0,3));
+        pipe.addJob(new VerifyInfo());  
+        pipe.addJob(new VerifyNewlineMultiplicity());
+        pipe.addJob(new ReadWriteJob(3,1));
+        pipe.addJob(new VerifyInfo());  
+        pipe.addJob(new VerifyNewlineMultiplicity());
+        pipe.addJob(new ReadWriteJob(4,s1.length()-4));
+        pipe.addJob(new VerifyInfo());  
+        pipe.addJob(new VerifyNewlineMultiplicity());
+        pipe.addJob(new VerifyCorrectEchoedNewline());
+        
+        return pipe;
+    }
     
     /**
      * Main method. First parameter is the port (default 1000) and the second 
@@ -126,7 +173,12 @@ public class Pa3_test {
                 smallChunkTest(port, serverChunkSize, 1000),
                 largeBufferTransfer(port, 1000000, 15000),
                 smallChunkTest(port, serverChunkSize, 1000),
-                largeBufferTransfer(port, 1000000, 15000)
+                largeBufferTransfer(port, 1000000, 15000),
+                LongBufferNewLineServer(port,1000000,15000 ),
+                ShortBufferNewlineBehavior(port, 1000),
+                LongBufferNewLineServer(port,1000000,15000 ),
+                ShortBufferNewlineBehavior(port, 1000),
+                
         };
         
         System.out.println("\nStarting jobs...\n");

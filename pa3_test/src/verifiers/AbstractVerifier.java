@@ -2,13 +2,14 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package pa3_test.verifiers;
+package verifiers;
 
 import java.io.PrintStream;
 import java.io.StringWriter;
 import jobpipes.AsyncJob;
 import jobpipes.Pipe;
 import pa3_test.ThreadedReadWrite;
+import verifiers.util.VerifyUtils;
 
 /**
  * Verify the results of a send/receive
@@ -39,27 +40,6 @@ public abstract class AbstractVerifier implements AsyncJob {
        out.append(name+" : "+rezult+"\n");
    }
    
-   /**
-    * Verifies the identity of the two buffers.
-    * -1 in case of match, the position of the first difference in case of fail.
-    * @param start
-    * @param length
-    * @return 
-    */
-   protected int checkBuffers(int start, int length){
-       if(RWResult==null)
-           throw new RuntimeException("ThreadReadWrite is null");
-       byte[] buff1, buff2;
-       buff1=RWResult.getIn_buff();
-       buff2=RWResult.getOut_buff();
-       length=Math.min(Math.min(buff1.length,buff2.length),start+length);
-       for(int i=start;i<length;i++){
-           if(buff1[i]!=buff2[i])
-               return i;
-       }
-       return -1;
-   }
-
    /**
     * Maybe you want to write a log, or to group results together, expecially in multithreading env.
     * @param out 
