@@ -2,6 +2,8 @@ Program assignment #3 and #4 test client.
 
 This client connects to a port and evaluates "chunk at a time", "line at a time" and "line with ThreadID in the beginning of the echoed line" type of servers. 
 
+Latest version (source code and .jar) at: https://github.com/cristi-zz/POSA
+
 Feel free to look into the source code for details!
 
 Usage:
