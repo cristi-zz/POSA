@@ -5,6 +5,7 @@
 package verifiers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import verifiers.util.VerifyUtils;
 import verifiers.util.VerifyUtils.PairIdx;
 
@@ -22,6 +23,10 @@ public class VerifyNewlineMultiplicity extends AbstractVerifier {
     
     @Override
     protected String doVerification() {
-        return VerifyUtils.verifyNewlineMultiplicity(RWResult.getIn_buff(), RWResult.getOut_buff());
+        byte[] in_buff, out_buff;
+        in_buff=Arrays.copyOf(RWResult.getIn_buff(), RWResult.getTotalReadBytes());
+        out_buff=Arrays.copyOf(RWResult.getOut_buff(), RWResult.getTotalWrittenBytes());
+        
+        return VerifyUtils.verifyNewlineMultiplicity(in_buff,out_buff);
     }    
 }

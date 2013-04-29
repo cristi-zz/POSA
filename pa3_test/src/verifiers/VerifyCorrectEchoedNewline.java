@@ -5,6 +5,7 @@
 package verifiers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.TreeSet;
 import pa3_test.ThreadedReadWrite;
 import verifiers.util.VerifyUtils;
@@ -29,8 +30,8 @@ public class VerifyCorrectEchoedNewline extends AbstractVerifier{
     @Override
     protected String doVerification() {
         byte[] rec_buf,sent_buf;
-        rec_buf=RWResult.getIn_buff();
-        sent_buf=RWResult.getOut_buff();
+        rec_buf=Arrays.copyOf(RWResult.getIn_buff(), RWResult.getTotalReadBytes());
+        sent_buf=Arrays.copyOf(RWResult.getOut_buff(), RWResult.getTotalWrittenBytes());
         String rez;
         rez=VerifyUtils.verifyNewlineEchoedCorrect(rec_buf,sent_buf);
         //get out if errors
